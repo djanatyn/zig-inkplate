@@ -6,9 +6,27 @@ proof of concept:
 - build xtensa ESP-32 compatible object file from zig code (requires experimental LLVM),
 - link to thin C++ wrapper code calling zig implementation
 
+
 challenges
 ==========
 - xtensa support is tier 4 for zig, requiring an experimental LLVM backend to generate machine code
+- compilation fails on a mysterious "fixup value must be 4-byte aligned" error in all optimization modes:
+```
+~/code/zig-inkplate: ~/code/zig/build/stage3/bin/zig build firmware
+firmware
+└─ run arduino-cli
+   └─ compile obj zig_app debug xtensa-freestanding-none failure
+error: error: <unknown>:0: fixup value must be 4-byte aligned
+
+
+error: process exited with code 1
+failed command: /Users/jstrickland/code/zig/build/stage3/bin/zig build-obj -target xtensa-freestanding-none -mcpu esp32 -Mroot=zig/demo.zig --cache-dir .zig-cache --global-cache-dir /Users/jstrickland/.cache/zig --build-root . --name zig_app --zig-lib-dir /Users/jstrickland/code/zig/build/stage3/lib/zig/ --listen=-
+
+Build Summary: 0/3 steps succeeded (1 failed)
+firmware transitive failure
+└─ run arduino-cli transitive failure
+   └─ compile obj zig_app debug xtensa-freestanding-none failure
+```
 
 setup
 =====
