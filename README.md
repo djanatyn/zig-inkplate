@@ -28,6 +28,49 @@ firmware transitive failure
    └─ compile obj zig_app debug xtensa-freestanding-none failure
 ```
 
+llvm patch to fix:
+```diff
+diff --git a/llvm/lib/Target/Xtensa/MCTargetDesc/XtensaTargetStreamer.cpp b/llvm/lib/Target/Xtensa/MCTargetDesc/XtensaTargetStreamer.cpp
+index 0ea70cff4..1dbc36f8a 100644
+--- a/llvm/lib/Target/Xtensa/MCTargetDesc/XtensaTargetStreamer.cpp
++++ b/llvm/lib/Target/Xtensa/MCTargetDesc/XtensaTargetStreamer.cpp
+@@ -90,6 +90,7 @@ void XtensaTargetELFStreamer::emitLiteral(MCSymbol *LblSym, const MCExpr *Value,
+
+     MCSection *ConstSection = Context.getELFSection(
+         SectionName, ELF::SHT_PROGBITS, ELF::SHF_EXECINSTR | ELF::SHF_ALLOC);
++    ConstSection->setAlignment(Align(4));
+
+     OutStreamer.pushSection();
+     OutStreamer.switchSection(ConstSection);
+@@ -112,6 +113,7 @@ void XtensaTargetELFStreamer::startLiteralSection(MCSection *BaseSection) {
+       SectionName, ELF::SHT_PROGBITS, ELF::SHF_EXECINSTR | ELF::SHF_ALLOC);
+
+   ConstSection->setAlignment(Align(4));
++  getStreamer().switchSection(ConstSection);
+ }
+
+ MCELFStreamer &XtensaTargetELFStreamer::getStreamer() {
+diff --git a/llvm/test/MC/Xtensa/directive-literal.s b/llvm/test/MC/Xtensa/directive-literal.s
+index 269cf20ed..1dd9c252d 100644
+--- a/llvm/test/MC/Xtensa/directive-literal.s
++++ b/llvm/test/MC/Xtensa/directive-literal.s
+@@ -21,6 +21,7 @@ test_literal:
+
+ # CHECK-LITERAL: Section {
+ # CHECK-LITERAL:   Name: .literal
++# CHECK-LITERAL:   AddressAlignment: 4
+ # CHECK-LITERAL:   SectionData (
+ # CHECK-LITERAL:     0000: 78563412 00000000 30750000
+ # CHECK-LITERAL:   )
+@@ -39,4 +40,3 @@ test_literal:
+ # CHECK-INST: l32r a4, .Ltmp0
+ # CHECK-INST: movi a5, 1000
+ # CHECK-INST: ret
+-
+```
+
+`
+
 setup
 =====
 compiling llvm with experimental xtensa support:
