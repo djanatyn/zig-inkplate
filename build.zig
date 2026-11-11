@@ -39,6 +39,8 @@ pub fn build(b: *std.Build) void {
         "compile",
         "--fqbn",
         "soldered-inkplate-boards:esp32:Inkplate4TEMPERA:UploadSpeed=115200",
+        "--output-dir",
+        "build",
         "arduino",
     });
     compile.addPrefixedFileArg(
