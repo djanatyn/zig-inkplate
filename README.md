@@ -143,8 +143,9 @@ index 269cf20ed..1dd9c252d 100644
  # CHECK-INST: ret
 -
 ```
-
-`
+related (unreleased at time of writing):
+- https://github.com/llvm/llvm-project/issues/190204
+- https://github.com/llvm/llvm-project/pull/200132
 
 setup
 =====
