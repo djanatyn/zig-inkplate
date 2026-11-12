@@ -1,5 +1,32 @@
 const std = @import("std");
 
+fn arduinoCompile(
+    b: *std.Build,
+    app: *std.Build.Step.Compile,
+    upload: bool,
+    port: ?[]const u8,
+) *std.Build.Step {
+    const cmd = b.addSystemCommand(&.{
+        "arduino-cli",
+        "compile",
+        "--fqbn",
+        "soldered-inkplate-boards:esp32:Inkplate4TEMPERA:UploadSpeed=115200",
+        "--output-dir",
+        "build",
+        "arduino",
+    });
+    if (upload) {
+        cmd.addArgs(&.{"--upload"});
+        if (port) |p| cmd.addArgs(&.{ "-p", p });
+    }
+    cmd.addPrefixedFileArg(
+        "--build-property=build.extra_libs=",
+        app.getEmittedBin(),
+    );
+    cmd.step.dependOn(&app.step);
+    return &cmd.step;
+}
+
 pub fn build(b: *std.Build) void {
     const target = b.resolveTargetQuery(.{
         .cpu_arch = .xtensa,
@@ -10,8 +37,8 @@ pub fn build(b: *std.Build) void {
 
     const optimize: std.builtin.Optimize = .Debug;
 
-    const translated_shim = b.addTranslateC(.{
-        .root_source_file = b.path("arduino/shim.h"),
+    const inkplate = b.addTranslateC(.{
+        .root_source_file = b.path("arduino/wrapper.h"),
         .target = target,
         .optimize = optimize,
         .link_libc = false,
@@ -23,8 +50,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .imports = &.{
             .{
-                .name = "shim",
-                .module = translated_shim.createModule(),
+                .name = "inkplate",
+                .module = inkplate.createModule(),
             },
         },
     });
@@ -34,21 +61,23 @@ pub fn build(b: *std.Build) void {
         .root_module = app_module,
     });
 
-    const compile = b.addSystemCommand(&.{
-        "arduino-cli",
-        "compile",
-        "--fqbn",
-        "soldered-inkplate-boards:esp32:Inkplate4TEMPERA:UploadSpeed=115200",
-        "--output-dir",
-        "build",
-        "arduino",
-    });
-    compile.addPrefixedFileArg(
-        "--build-property=build.extra_libs=",
-        app.getEmittedBin(),
+    const port = b.option(
+        []const u8,
+        "port",
+        "Serial port for upload/monitor (e.g. /dev/cu.usbserial-1410)",
     );
-    compile.step.dependOn(&app.step);
 
     const firmware = b.step("firmware", "Build the Arduino firmware");
-    firmware.dependOn(&compile.step);
+    firmware.dependOn(arduinoCompile(b, app, false, port));
+
+    const upload = b.step("upload", "Compile and upload over USB");
+    upload.dependOn(arduinoCompile(b, app, true, port));
+
+    const monitor_cmd = b.addSystemCommand(&.{
+        "arduino-cli", "monitor", "-p", port orelse "", "--config", "115200",
+    });
+    monitor_cmd.step.dependOn(upload);
+
+    const flash = b.step("flash", "Upload, then open the serial monitor");
+    flash.dependOn(&monitor_cmd.step);
 }

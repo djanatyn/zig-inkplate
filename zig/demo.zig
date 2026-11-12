@@ -1,11 +1,13 @@
-const shim = @import("shim");
+const inkplate = @import("inkplate");
 
 export fn zig_app_setup() void {
-    shim.display_begin();
-    shim.serial_print("starting!");
+    inkplate.serial_print("starting!");
+    inkplate.display_begin();
+    inkplate.display_clear();
 }
 
 export fn zig_app_loop() void {
-    shim.display_set_cursor(100, 0);
-    shim.display_print("hello world");
+    inkplate.display_set_cursor(100, 0);
+    inkplate.display_print("hello world");
+    inkplate.display_display();
 }
