@@ -44,32 +44,13 @@ Disassembly of section .text:
 Disassembly of section .literal:
 
 00000000 <.literal>:
-	...
+	asm...
 			0: R_XTENSA_32	display_set_cursor
 			4: R_XTENSA_32	.rodata.str1.1
 			8: R_XTENSA_32	display_print
 			c: R_XTENSA_32	display_begin
 			10: R_XTENSA_32	.rodata.str1.1+0xc
 			14: R_XTENSA_32	serial_print
-```
-
-```objdump
-$ xtensa-esp32-elf-objdump -df build/arduino.ino.elf | grep '<zig_app_loop>:' -A 12
-400dc53c <zig_app_loop>:
-400dc53c:	004136        	entry	a1, 32
-400dc53f:	207110        	or	a7, a1, a1
-400dc542:	d0f681        	l32r	a8, 400d091c <_stext+0x8fc> (400d2784 <display_set_cursor>)
-400dc545:	64a0a2        	movi	a10, 100
-400dc548:	00a0b2        	movi	a11, 0
-400dc54b:	0008e0        	callx8	a8
-400dc54e:	d0f4a1        	l32r	a10, 400d0920 <_stext+0x900> (3f401bd8 <__anon_1059>)
-400dc551:	d0f481        	l32r	a8, 400d0924 <_stext+0x904> (400d2794 <display_print>)
-400dc554:	0008e0        	callx8	a8
-400dc557:	f01d      	retw.n
-400dc559:	0020f0        	nop
-
-$ strings -t x build/arduino.ino.elf | grep "hello world"
-2bd8 hello world
 ```
 
 uploading firmware
